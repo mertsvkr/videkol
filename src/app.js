@@ -1,6 +1,7 @@
 const express = require("express")
 require('./db/db.js') // connects to the database
 const authRouter = require("./api/routers/auth")
+const webrouter = require("./web/routers/routes")
 const cookieParser = require("cookie-parser")
 const PORT = process.env.PORT
 
@@ -16,6 +17,7 @@ app.use(express.static('./src/web/static')) // set static folder
 
 
 app.use(authRouter)
+app.use(webrouter)
 
 const server = app.listen(PORT, () => {
     console.log("Server running on port: " + PORT)
