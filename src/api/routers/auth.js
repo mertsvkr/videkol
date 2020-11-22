@@ -4,7 +4,7 @@ const { signupPost, loginPost, logoutPost } = require("../controller/auth")
 const router = express.Router()
 
 //end points for signup and login requests
-router.post("/user/signup", signupFieldCheck, signupPost)
-router.post("/user/login", loginFieldCheck, loginPost)
-router.post("/user/logout", logoutPost)
+router.post("/api/auth/signup", signupFieldCheck, signupPost)
+router.post("/api/auth/login", loginFieldCheck, loginPost)
+router.post("/api/auth/logout", logoutPost)
 module.exports = router
