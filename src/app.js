@@ -1,8 +1,11 @@
 const express = require("express")
 require('./db/db.js') // connects to the database
 const authRouter = require("./api/routers/auth")
-const webrouter = require("./web/routers/routes")
+const webRouter = require("./web/routers/routes")
+const communicationRouter = require("./api/routers/communication")
+
 const cookieParser = require("cookie-parser")
+const jwt = require("jsonwebtoken")
 const PORT = process.env.PORT
 
 const app = express()
@@ -17,34 +20,12 @@ app.use(express.static('./src/web/static')) // set static folder
 
 
 app.use(authRouter)
-app.use(webrouter)
+app.use(webRouter)
+app.use(communicationRouter)
 
 const server = app.listen(PORT, () => {
     console.log("Server running on port: " + PORT)
 })
 
-
-const io = require("socket.io")(server)
-
-io.on('connection', (socket) => {
-    console.log('New user connected')
-
-    //default username
-    socket.username = "Anonymous"
-
-    //listen on change_username
-    socket.on('change_username', (data) => {
-        socket.username = data.username
-    })
-
-    //listen on new_message
-    socket.on('new_message', (data) => {
-        //broadcast the new message
-        io.sockets.emit('new_message', { message: data.message, username: socket.username });
-    })
-
-    //listen on typing
-    socket.on('typing', (data) => {
-        socket.broadcast.emit('typing', { username: socket.username })
-    })
-})
+const { io, setIO } = require("../src/web/socket")
+setIO(server)

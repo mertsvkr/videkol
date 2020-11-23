@@ -1,4 +1,4 @@
-window.onload = function setActions() {
+function setAuthButtonActions() {
     //buttons and inputs
     const emailL = document.getElementById("emailL")
     const passwordL = document.getElementById("passwordL")

@@ -7,13 +7,36 @@
 
 <body>
     <h1>Welcome home</h1>
+    <div id="messagingDiv">
+        <div id="messagesDiv">
+
+        </div>
+        <input type="text" id="messageText"><br>
+        <button id="sendMessageButton">Send Message</button>
+    </div>
+    <div id="roomManagementDiv">
+        <div id="roomsDiv">
+
+        </div>
+        <div id="createRoomDiv">
+            <input type="text" id="participantEmails"><br>
+            <button id="createRoomButton">Create Room</button>
+        </div>
+    </div>
+
     <button id="logoutButton">Log out</button>
     <script src="http://code.jquery.com/jquery-latest.min.js"></script>
 </body>
 
 <script src="/scripts/auth.js"></script>
 <script src="/scripts/communication.js"></script>
-<script>createSocketConnection()</script>
+<script>
+    createSocketConnection()
+    window.onload = () => {
+        setAuthButtonActions()
+        setCommunicationButtonActions()
+    }
+</script>
 
 
 </html>
