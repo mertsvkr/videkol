@@ -12,10 +12,29 @@ function createSocketConnection() {
         if (messages[data.room]) { // if the room already exists 
             messages[data.room].push({ from: data.from, message: data.message })
         } else { //if not create and push the message
+            addRoom(data.room)
             messages[data.room] = [{ from: data.from, message: data.message }]
         }
+        var messageNode = document.createElement("p")
+        messageNode.innerText = data.from + ": " + data.message
+        document.getElementById("messagesDiv").appendChild(messageNode);
     })
 }
+
+function selectRoomToChat(event) {
+    currentRoom = event.srcElement.name
+}
+
+function addRoom(roomName) {
+    rooms.push(roomName)
+    var buttonNode = document.createElement("button")
+    buttonNode.name = roomName
+    buttonNode.innerText = roomName
+    buttonNode.onclick = selectRoomToChat
+    document.getElementById("roomsDiv").appendChild(buttonNode);
+}
+
+
 
 function setCommunicationButtonActions() {
     var createRoomButton = document.getElementById("createRoomButton")
@@ -36,7 +55,7 @@ function setCommunicationButtonActions() {
                 data: JSON.stringify({ "others": participantEmails.value.split(";") }),
                 success: function (response) {
                     console.log(response)
-                    myRoom = response.chatroom
+                    addRoom(response.chatroom)
                 },
                 error: function showErrorMessage(xhr, status, error) {
                     console.log(xhr)
