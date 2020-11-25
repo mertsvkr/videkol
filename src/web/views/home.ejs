@@ -6,13 +6,15 @@
 </head>
 
 <body>
-    <h1>Welcome home</h1>
+    <h1>Welcome <%=email%></h1>
     <div id="messagingDiv">
         <div id="messagesDiv">
 
         </div>
-        <input type="text" id="messageText"><br>
+        <input type="text" id="messageText">
+        <input type="file" id="messageFile"><br>
         <button id="sendMessageButton">Send Message</button>
+        <button id="sendFileButton">Send File</button>
     </div>
     <div id="roomManagementDiv">
         <div id="roomsDiv">
