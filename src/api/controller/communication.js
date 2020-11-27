@@ -1,27 +1,30 @@
+const { isValidObjectId } = require("mongoose")
 const User = require("../../models/User")
-
+const { generateUUID, getSocketListOfARoom } = require("../../utils")
 
 async function createRoomPost(req, res) {
     try {
         //create random name for rooms
-        var roomName = Math.random().toString()
+        var roomName = generateUUID()
 
         //get every socket belonging to the account of the room creator.
-        var socketIDs = io.sockets.adapter.rooms.get(req.user.email)
+        var createrSockets = getSocketListOfARoom(req.user.email)
         //join the sockets of the creator account
-        socketIDs.forEach((ID) => {
-            io.sockets.sockets.get(ID).join(roomName)
+        createrSockets.forEach((socketItem) => {
+            socketItem.join(roomName)
         })
 
         for (userEmail in req.body.others) {
             //get every socket belonging to the account of the other people.
-            console.log(req.body.others[userEmail])
-            var socketIDs = io.sockets.adapter.rooms.get(req.body.others[userEmail])
+            var sockets = getSocketListOfARoom(req.body.others[userEmail])
             //join the sockets of the account
-            socketIDs?.forEach((ID) => {
-                io.sockets.sockets.get(ID).join(roomName)
+            sockets?.forEach((socketItem) => {
+                socketItem.join(roomName)
             })
         }
+
+        io.to(roomName).emit("newRoomCreated", { roomName: roomName, roomTitle: req.body.roomTitle })
+
         res.status(200).send({ success: true, chatroom: roomName })
     } catch (err) {
         console.log(err)
@@ -30,3 +33,4 @@ async function createRoomPost(req, res) {
 }
 
 module.exports.createRoomPost = createRoomPost
+

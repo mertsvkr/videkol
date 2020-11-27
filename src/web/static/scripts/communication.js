@@ -1,33 +1,42 @@
 var currentRoom = ""
-var rooms = []
-var messages = {}  /* every key is room name, their value is array of the messages.    
-                     every element of the array is in such format: {from:"email", message: "content"} */
+var rooms = [] //only roomNames
+var roomInfo = {} /**every key is room name, their value is {title: "", messages: []} */
+//                     every element of the messages array is in such format: {from:"email", message: "content" fileId: id, filType, fileSize, fileName} */
 myFileReaders = {}
 downloadingFileBuffers = {}
-
 var socket = null
 function createSocketConnection() {
     socket = io.connect("http://127.0.0.1:3000")
     socket.emit("accountRoom", document.cookie)
 
+    socket.on("newRoomCreated", data => {
+        if (!rooms.includes(data.roomName)) {
+            rooms.push(data.roomName)
+            roomInfo[data.roomName] = { title: data.roomTitle, messages: [] }
+            refreshChatRoomList()
+        }
+    })
+
     socket.on("newMessage", data => {
-        if (messages[data.room]) { // if the room already exists 
-            messages[data.room].push({ from: data.from, message: data.message })
-        } else { //if not create and push the message
-            addRoom(data.room)
-            messages[data.room] = [{ from: data.from, message: data.message }]
+        var messageObject = null
+        if (data.file) {
+            messageObject = {
+                from: data.from,
+                message: data.file.name + " size: " + data.file.size / 1048576.0 + " MB",
+                fileId: data.file.id,
+                fileType: data.file.type,
+                fileSize: data.file.size,
+                fileName: data.file.name
+            }
+        } else {
+            messageObject = { from: data.from, message: data.message, fileId: null, fileType: null, fileSize: null, fileName: null }
         }
-        var messageNode = document.createElement("p")
-        if (data.message) {
-            messageNode.innerText = data.from + ": " + data.message
-            document.getElementById("messagesDiv").appendChild(messageNode);
-        } else if (data.file) {
-            messageNode.innerText = data.from + ": " + data.file.name + ", size: " + data.file.size / 1048576.0 + " MB"
-            messageNode.id = data.file.id + "/p"
-            messageNode.name = data.file.size
-            document.getElementById("messagesDiv").appendChild(messageNode);
-            messageNode.onclick = onDownloadTheFileClick
+        roomInfo[data.room].messages.push(messageObject)
+
+        if (currentRoom == data.room) { // if room is open, show the message on the screen
+            createMessageNodeAndAdd(messageObject)
         }
+
     })
 
     // if the server wants more slice of the uploading file:
@@ -50,7 +59,7 @@ function createSocketConnection() {
             var objectURL = URL.createObjectURL(blob);
             link.href = objectURL;
             link.href = URL.createObjectURL(blob);
-            link.download = 'data.txt';
+            link.download = downloadingFileBuffers[data.id].name;
             link.click();
             console.log(data.id)
         }
@@ -61,17 +70,78 @@ function createSocketConnection() {
     })
 }
 
+function refreshChatRoomList() {
+    var roomTemplate = document.querySelector('#roomTemplate');
+    var cloneRoom = null
+    // Clone the new row and insert it into the table
+    var roomsDiv = document.getElementById("roomsDiv")
+    roomsDiv.innerHTML = ""
+    var i = rooms.length - 1;
+    while (i >= 0) {
+        cloneRoom = roomTemplate.content.cloneNode(true);
+        console.log(cloneRoom)
+        cloneRoom.firstElementChild.name = rooms[i]
+        cloneRoom.firstElementChild.firstElementChild.name = rooms[i]
+
+        cloneRoom.getElementById("roomTitle").innerHTML = roomInfo[rooms[i]].title
+        cloneRoom.firstElementChild.onclick = selectRoomToChat
+        roomsDiv.appendChild(cloneRoom)
+        i--
+    }
+}
+var testNode = document.querySelector('#roomTemplate').content.cloneNode(true)
+
 function onDownloadTheFileClick(event) {
-    var fileId = event.target.id.split("/")[0]
+    var [fileId, fileName] = event.target.id.split("/./.")
     if (!downloadingFileBuffers[fileId]) {
-        downloadingFileBuffers[fileId] = { buffer: [], currentSlice: 0, size: event.target.name }
+        downloadingFileBuffers[fileId] = { buffer: [], currentSlice: 0, size: event.target.name, name: fileName }
         socket.emit("downloadRequest", { id: fileId, currentSlice: 0 })
     }
 }
 
 function selectRoomToChat(event) {
+    console.log("room selected")
     currentRoom = event.srcElement.name
+    document.getElementById("messagingDivPlaceholder").style.display = "none"
+    document.getElementById("messagingDiv").style.display = "block"
+    document.getElementById("messagingRoomTitle").innerText = roomInfo[currentRoom].title
+    setMessages()
 }
+
+function setMessages() {
+    var messageTemplate = document.querySelector('#messageTemplate');
+    var cloneMessage = null
+    document.getElementById("messagesDiv").innerHTML = ""
+    var messages = roomInfo[currentRoom].messages
+    var i = 0
+    while (i < messages.length) {
+        createMessageNodeAndAdd(roomInfo[currentRoom].messages[i])
+        i++
+    }
+}
+
+function createMessageNodeAndAdd(messageObject) {
+    var messageTemplate = document.querySelector('#messageTemplate');
+    var cloneMessage = messageTemplate.content.cloneNode(true)
+    cloneMessage.firstElementChild.firstElementChild.innerText = messageObject.from
+    cloneMessage.firstElementChild.lastElementChild.innerText = messageObject.message
+    if (messageObject.fileId) { //if this is a file 
+        cloneMessage.firstElementChild.id = messageObject.fileId + "/./." + messageObject.fileName
+        cloneMessage.firstElementChild.name = parseInt(messageObject.fileSize)
+        cloneMessage.firstElementChild.onclick = onDownloadTheFileClick
+
+        cloneMessage.firstElementChild.firstElementChild.id = messageObject.fileId + "/./." + messageObject.fileName
+        cloneMessage.firstElementChild.firstElementChild.name = parseInt(messageObject.fileSize)
+        cloneMessage.firstElementChild.firstElementChild.onclick = onDownloadTheFileClick
+
+        cloneMessage.firstElementChild.lastElementChild.id = messageObject.fileId + "/./." + messageObject.fileName
+        cloneMessage.firstElementChild.lastElementChild.name = parseInt(messageObject.fileSize)
+        cloneMessage.firstElementChild.lastElementChild.onclick = onDownloadTheFileClick
+    }
+
+    document.getElementById("messagesDiv").appendChild(cloneMessage)
+}
+
 
 function addRoom(roomName) {
     rooms.push(roomName)
@@ -86,32 +156,12 @@ function addRoom(roomName) {
 
 function setCommunicationButtonActions() {
     var createRoomButton = document.getElementById("createRoomButton")
+    var participantEmails = document.getElementById("newRoomParticipants")
+    var newRoomTitle = document.getElementById("newRoomTitle")
     var sendMessageButton = document.getElementById("sendMessageButton")
-    var messageText = document.getElementById("messageText")
-    var participantEmails = document.getElementById("participantEmails")
-    var sendFileButton = document.getElementById("sendFileButton")
-    var messageFileButton = document.getElementById("messageFile")
+    var messageFileInput = document.getElementById("messageFileInput")
 
-    if (sendFileButton) {
-        sendFileButton.onclick = function () {
-            file = messageFileButton.files[0]
-            var fileReader = new FileReader()
-            var slice = file.slice(0, 100000);
-
-            fileReader.readAsArrayBuffer(slice);
-            fileReader.onload = (evt) => {
-                var arrayBuffer = fileReader.result;
-                socket.emit('slice upload', {
-                    room: currentRoom,
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    data: arrayBuffer
-                });
-            }
-        }
-    }
-
+    var messageTextInput = document.getElementById("messageTextInput")
 
     if (createRoomButton) {
         createRoomButton.onclick = function () {
@@ -123,10 +173,9 @@ function setCommunicationButtonActions() {
                     "Content-type": "application/json"
                 },
                 url: "http://127.0.0.1:3000/api/communication/createroom",
-                data: JSON.stringify({ "others": participantEmails.value.split(";") }),
+                data: JSON.stringify({ "others": participantEmails.value.split(";"), roomTitle: newRoomTitle.value }),
                 success: function (response) {
                     console.log(response)
-                    addRoom(response.chatroom)
                 },
                 error: function showErrorMessage(xhr, status, error) {
                     console.log(xhr)
@@ -137,42 +186,41 @@ function setCommunicationButtonActions() {
 
     if (sendMessageButton) {
         sendMessageButton.onclick = function () {
-            socket.emit("newMessage", { room: currentRoom, message: messageText.value })
-        }
-    }
+            if (messageFileInput.files.length == 0) {
+                socket.emit("newMessage", { room: currentRoom, message: messageTextInput.value })
+            } else {
+                var file = messageFileInput.files[0] // get the file
+                var fileReader = new FileReader() //create new fileReader for every File
+                fileReader.file = file // attach the file to its Reader
 
-    if (sendFileButton) {
-        sendFileButton.onclick = function () {
-            var file = messageFileButton.files[0] // get the file
-            var fileReader = new FileReader() //create new fileReader for every File
-            fileReader.file = file // attach the file to its Reader
+                //add the fileReader to the myFileReaders to get it after:
+                var transferId = generateUUID() //generate an id for this specific transfer, use this id in both server and client
+                myFileReaders[transferId] = fileReader
+                myFileReaders[transferId].id = transferId
 
-            //add the fileReader to the myFileReaders to get it after:
-            var transferId = generateUUID() //generate an id for this specific transfer, use this id in both server and client
-            myFileReaders[transferId] = fileReader
-            myFileReaders[transferId].id = transferId
 
-            //set the fileReader action which is called after preparing the buffer to send
-            fileReader.onload = (e) => {
-                console.log("new slice loaded")
-                var arrayBuffer = e.target.result;
-                socket.emit("requestSliceUpload", {
-                    id: e.target.id,
-                    data: arrayBuffer
+                //set the fileReader action which is called after preparing the buffer to send
+                fileReader.onload = (e) => {
+                    console.log("new slice loaded")
+                    var arrayBuffer = e.target.result;
+                    socket.emit("requestSliceUpload", {
+                        id: e.target.id,
+                        data: arrayBuffer
+                    });
+                }
+
+                //to start the upload, send request to the server
+                socket.emit('newFileUploadRequest', {
+                    id: transferId,
+                    room: currentRoom,
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
                 });
-            }
 
-            //to start the upload, send request to the server
-            socket.emit('newFileUploadRequest', {
-                id: transferId,
-                room: currentRoom,
-                name: file.name,
-                type: file.type,
-                size: file.size,
-            });
+            }
         }
     }
-
 }
 
 

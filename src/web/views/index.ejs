@@ -4,26 +4,19 @@
 </head>
 
 <body>
-    <h2>Log in</h2>
-    <form>
-        <label for="emailL">email: </label>
-        <input type="text" id="emailL"><br>
-        <label for="passwordL">password: </label>
-        <input type="text" id="passwordL"><br>
-    </form>
-    <button id="loginButton">Login</button><br><br>
-    <h2>Sign up</h2>
-    <form>
-        <label for="emailS">email: </label>
-        <input type="text" id="emailS"><br>
-        <label for="passwordS">password: </label>
-        <input type="text" id="passwordS"><br>
-        <label for="usernameS">username: </label>
-        <input type="text" id="usernameS"><br><br>
-    </form>
-    <button id="signupButton">Sign up</button><br><br>
-
-
+    <div id="signupDiv">
+        <p id="signupHeader">SIGN UP</p>
+        <input type="text" placeholder="username" id="signupUsername">
+        <input type="text" placeholder="email" id="signupEmail">
+        <input type="text" placeholder="password" id="signupPassword">
+        <button id="signupButton">Sign Up!</button>
+    </div>
+    <div id="loginDiv">
+        <p id="loginHeader">LOG IN</p>
+        <input type="text" placeholder="email" id="loginEmail">
+        <input type="text" placeholder="password" id="loginPassword">
+        <button id="loginButton">Login!</button>
+    </div>
     <script src="http://code.jquery.com/jquery-latest.min.js"></script>
 </body>
 <script src="/scripts/auth.js"></script>

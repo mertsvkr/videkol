@@ -64,7 +64,7 @@ async function setIO(server) {
                 socket.to(files[data.id].room).emit("newMessage",
                     {
                         room: files[data.id].room, from: socket.email,
-                        file: { id: data.id, name: files[data.id].name, size: files[data.id].size }
+                        file: { id: data.id, name: files[data.id].name, size: files[data.id].size, type: files[data.id].type }
                     }
                 )
             } else { // request the next slice of the file.

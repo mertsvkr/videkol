@@ -1,13 +1,74 @@
 <html>
+<template id="roomTemplate">
+    <div class="room">
+        <p id="roomTitle" class="roomTitleP"></p>
+    </div>
+</template>
+
+<template id="messageTemplate">
+    <div class="message">
+        <p class="messageFrom"></p>
+        <p class="messageContent"></p>
+    </div>
+</template>
 
 <head>
     <script src="/socket.io/socket.io.js"></script>
-
 </head>
 
 <body>
-    <h1>Welcome <%=email%></h1>
-    <div id="messagingDiv">
+    <div id="headerDiv">
+        <p>Welcome <%=email%></p>
+        <button id="logoutButton">Log out</button>
+    </div>
+    <div id="pageContentsDiv">
+        <div id="messagingDivPlaceholder">
+            ODA SEC
+        </div>
+        <div id="messagingDiv" style="display: none;">
+            <div id="messagingHeaderDiv">
+                <p id="messagingRoomTitle"></p>
+            </div>
+            <div id="messagesDiv">
+
+            </div>
+            <div id="sendMessageDiv">
+                <input type="text" id="messageTextInput">
+                <input type="file" id="messageFileInput">
+                <button id="sendMessageButton">Send</button>
+            </div>
+        </div>
+        <div id="roomRelatedDiv">
+            <div id="roomsDiv">
+
+            </div>
+            <div id="createRoomDiv">
+                <input type="text" id="newRoomTitle" placeholder="room title">
+                <input type="text" id="newRoomParticipants" placeholder="email1@example.com;email2@example.com;...">
+                <button id="createRoomButton">Create Room</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+</body>
+
+<script src="/scripts/auth.js"></script>
+<script src="/scripts/communication.js"></script>
+<script>
+    createSocketConnection()
+    window.onload = () => {
+        setAuthButtonActions()
+        setCommunicationButtonActions()
+    }
+</script>
+
+
+
+</html>
+
+<!--
+        <div id="messagingDiv">
         <div id="messagesDiv">
 
         </div>
@@ -27,18 +88,5 @@
     </div>
 
     <button id="logoutButton">Log out</button>
-    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
-</body>
 
-<script src="/scripts/auth.js"></script>
-<script src="/scripts/communication.js"></script>
-<script>
-    createSocketConnection()
-    window.onload = () => {
-        setAuthButtonActions()
-        setCommunicationButtonActions()
-    }
-</script>
-
-
-</html>
+-->

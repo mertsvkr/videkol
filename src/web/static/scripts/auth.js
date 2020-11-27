@@ -1,12 +1,12 @@
 function setAuthButtonActions() {
     //buttons and inputs
-    const emailL = document.getElementById("emailL")
-    const passwordL = document.getElementById("passwordL")
+    const emailL = document.getElementById("loginEmail")
+    const passwordL = document.getElementById("loginPassword")
     const loginButton = document.getElementById("loginButton")
 
-    const emailS = document.getElementById("emailS")
-    const passwordS = document.getElementById("passwordS")
-    const usernameS = document.getElementById("usernameS")
+    const emailS = document.getElementById("signupEmail")
+    const passwordS = document.getElementById("signupPassword")
+    const usernameS = document.getElementById("signupUsername")
     const signupButton = document.getElementById("signupButton")
 
     const logoutButton = document.getElementById("logoutButton")
