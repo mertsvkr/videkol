@@ -20,7 +20,7 @@ function setAuthButtonActions() {
                     "Accept": "application/json",
                     "Content-type": "application/json"
                 },
-                url: "http://127.0.0.1:3000/api/auth/login",
+                url: URL_BASE + "/api/auth/login",
                 data: JSON.stringify({ "user": { "email": emailL.value, "password": passwordL.value } }),
                 success: function (response) {
                     location.reload() // reloads the page 
@@ -42,7 +42,7 @@ function setAuthButtonActions() {
                     "Accept": "application/json",
                     "Content-type": "application/json"
                 },
-                url: "http://127.0.0.1:3000/api/auth/signup",
+                url: URL_BASE + "/api/auth/signup",
                 data: JSON.stringify({ "user": { "email": emailS.value, "password": passwordS.value, username: usernameS.value } }),
                 success: function (response) {
                     location.reload() // reloads the page
@@ -64,7 +64,7 @@ function setAuthButtonActions() {
                     "Accept": "application/json",
                     "Content-type": "application/json"
                 },
-                url: "http://127.0.0.1:3000/api/auth/logout",
+                url: URL_BASE + "/api/auth/logout",
                 success: function (response) {
                     location.reload() // reloads the page
                     console.log(response)

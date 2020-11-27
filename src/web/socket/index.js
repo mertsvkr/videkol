@@ -61,7 +61,7 @@ async function setIO(server) {
             if (files[data.id].slice * 100000 >= files[data.id].size) {
                 // tell the user that uploading is finished.
                 socket.emit('endUpload', { id: data.id, file: files[data.id].data });
-                socket.to(files[data.id].room).emit("newMessage",
+                io.to(files[data.id].room).emit("newMessage",
                     {
                         room: files[data.id].room, from: socket.email,
                         file: { id: data.id, name: files[data.id].name, size: files[data.id].size, type: files[data.id].type }

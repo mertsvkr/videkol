@@ -13,7 +13,9 @@
 </template>
 
 <head>
+    <script src="./scripts/constants.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="./styles/home.css">
 </head>
 
 <body>
@@ -33,7 +35,7 @@
 
             </div>
             <div id="sendMessageDiv">
-                <input type="text" id="messageTextInput">
+                <input type="text" placeholder="Your message text..." id="messageTextInput">
                 <input type="file" id="messageFileInput">
                 <button id="sendMessageButton">Send</button>
             </div>
@@ -66,27 +68,3 @@
 
 
 </html>
-
-<!--
-        <div id="messagingDiv">
-        <div id="messagesDiv">
-
-        </div>
-        <input type="text" id="messageText">
-        <input type="file" id="messageFile"><br>
-        <button id="sendMessageButton">Send Message</button>
-        <button id="sendFileButton">Send File</button>
-    </div>
-    <div id="roomManagementDiv">
-        <div id="roomsDiv">
-
-        </div>
-        <div id="createRoomDiv">
-            <input type="text" id="participantEmails"><br>
-            <button id="createRoomButton">Create Room</button>
-        </div>
-    </div>
-
-    <button id="logoutButton">Log out</button>
-
--->

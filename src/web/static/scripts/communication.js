@@ -6,7 +6,7 @@ myFileReaders = {}
 downloadingFileBuffers = {}
 var socket = null
 function createSocketConnection() {
-    socket = io.connect("http://127.0.0.1:3000")
+    socket = io.connect(URL_BASE)
     socket.emit("accountRoom", document.cookie)
 
     socket.on("newRoomCreated", data => {
@@ -103,8 +103,8 @@ function selectRoomToChat(event) {
     console.log("room selected")
     currentRoom = event.srcElement.name
     document.getElementById("messagingDivPlaceholder").style.display = "none"
-    document.getElementById("messagingDiv").style.display = "block"
-    document.getElementById("messagingRoomTitle").innerText = roomInfo[currentRoom].title
+    document.getElementById("messagingDiv").style.display = "flex"
+    document.getElementById("messagingRoomTitle").innerText = "Room: " + roomInfo[currentRoom].title
     setMessages()
 }
 
@@ -172,7 +172,7 @@ function setCommunicationButtonActions() {
                     "Accept": "application/json",
                     "Content-type": "application/json"
                 },
-                url: "http://127.0.0.1:3000/api/communication/createroom",
+                url: URL_BASE + "/api/communication/createroom",
                 data: JSON.stringify({ "others": participantEmails.value.split(";"), roomTitle: newRoomTitle.value }),
                 success: function (response) {
                     console.log(response)
