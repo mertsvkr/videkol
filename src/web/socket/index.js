@@ -85,18 +85,28 @@ async function setIO(server) {
 
 
         socket.on("newVideoCall", (data) => {
-            currentCalls[data.id] = { room: data.room, currentParticipantSocketIds: [], waitingSocketIds: [] }
+            currentCalls[data.id] = { room: data.room, currentParticipantSocketIds: [] }
             currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
             socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email })
         })
 
         socket.on("acceptCall", (data) => {
-            currentCalls[data.id].waitingSocketIds.push(soket.id)
             currentCalls[data.id].currentParticipantSocketIds.forEach(element => {
-                var participantSocket = io.sockets.sockets.get(element)
-                participantSocket.emit("newCallJoinRequest", { id: data.id })
+                if (element != socket.id) {
+                    socket.to(element).emit("newCallJoinRequest", { id: data.id, relatedSocket: socket.id })
+                }
             });
+            currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
         })
+
+        socket.on("offerForNewCallJoinRequest", (data) => {
+            socket.to(data.peer).emit("joinRequestAccepted", { id: data.id, offer: data.offer, relatedSocket: socket.id })
+        })
+
+        socket.on("sendCallAnswer", (data) => {
+            socket.to(data.peer).emit("receiveAnswer", { id: data.id, relatedSocket: socket.id, answer: data.answer })
+        })
+
     })
 }
 
