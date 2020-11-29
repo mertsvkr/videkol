@@ -11,6 +11,10 @@ var struct = {
     slice: 0,
 };
 
+var currentCalls = {
+
+}
+
 async function setIO(server) {
     global.io = require("socket.io")(server)
     io.on('connection', (socket) => {
@@ -77,6 +81,21 @@ async function setIO(server) {
 
         socket.on("downloadRequest", async (data) => {
             socket.emit("downloadFile", { id: data.id, slice: files[data.id].data[data.currentSlice] })
+        })
+
+
+        socket.on("newVideoCall", (data) => {
+            currentCalls[data.id] = { room: data.room, currentParticipantSocketIds: [], waitingSocketIds: [] }
+            currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
+            socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email })
+        })
+
+        socket.on("acceptCall", (data) => {
+            currentCalls[data.id].waitingSocketIds.push(soket.id)
+            currentCalls[data.id].currentParticipantSocketIds.forEach(element => {
+                var participantSocket = io.sockets.sockets.get(element)
+                participantSocket.emit("newCallJoinRequest", { id: data.id })
+            });
         })
     })
 }

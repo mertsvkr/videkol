@@ -1,13 +1,23 @@
 var currentRoom = ""
+var currentCallId = ""
+var comingCallId = ""
 var rooms = [] //only roomNames
 var roomInfo = {} /**every key is room name, their value is {title: "", messages: []} */
 //                     every element of the messages array is in such format: {from:"email", message: "content" fileId: id, filType, fileSize, fileName} */
 myFileReaders = {}
 downloadingFileBuffers = {}
 var socket = null
+const { RTCPeerConnection, RTCSessionDescription } = window; // to create rtc objects in video call operations
+
+
+
 function createSocketConnection() {
     socket = io.connect(URL_BASE)
     socket.emit("accountRoom", document.cookie)
+
+    socket.on("newCallJoinRequest", (data) => {
+
+    })
 
     socket.on("newRoomCreated", data => {
         if (!rooms.includes(data.roomName)) {
@@ -68,6 +78,15 @@ function createSocketConnection() {
     socket.on("endUpload", (data) => {
         console.log(data.id + " upload completed")
     })
+
+    socket.on("comingCall", (data) => {
+        if (currentCallId == "" && comingCallId == "") {
+            document.getElementById("acceptCall").style.display = "block"
+            document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from
+        }
+    })
+
+
 }
 
 function refreshChatRoomList() {
@@ -160,8 +179,15 @@ function setCommunicationButtonActions() {
     var newRoomTitle = document.getElementById("newRoomTitle")
     var sendMessageButton = document.getElementById("sendMessageButton")
     var messageFileInput = document.getElementById("messageFileInput")
-
     var messageTextInput = document.getElementById("messageTextInput")
+    var sendCallRequestButton = document.getElementById("sendCallRequestButton")
+    var acceptCallButton = document.getElementById("acceptCall")
+
+    if (acceptCallButton) {
+        acceptCallButton.onclick = function () {
+            socket.emit("acceptCall", { id: comingCallId })
+        }
+    }
 
     if (createRoomButton) {
         createRoomButton.onclick = function () {
@@ -218,6 +244,15 @@ function setCommunicationButtonActions() {
                     size: file.size,
                 });
 
+            }
+        }
+    }
+
+    if (sendCallRequestButton) {
+        sendCallRequestButton.onclick = function () {
+            if (currentCallId == "") {
+                currentCallId = generateUUID()
+                socket.emit("newVideoCall", { id: currentCallId, room: currentRoom })
             }
         }
     }
