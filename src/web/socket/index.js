@@ -93,18 +93,22 @@ async function setIO(server) {
         socket.on("acceptCall", (data) => {
             currentCalls[data.id].currentParticipantSocketIds.forEach(element => {
                 if (element != socket.id) {
-                    socket.to(element).emit("newCallJoinRequest", { id: data.id, relatedSocket: socket.id })
+                    socket.to(element).emit("newCallJoinRequest", { id: data.id, peer: socket.id, peerEmail: socket.email })
                 }
             });
             currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
         })
 
-        socket.on("offerForNewCallJoinRequest", (data) => {
-            socket.to(data.peer).emit("joinRequestAccepted", { id: data.id, offer: data.offer, relatedSocket: socket.id })
+        socket.on("sendOffer", (data) => {
+            socket.to(data.peer).emit("receiveOffer", { id: data.id, offer: data.offer, peer: socket.id, peerEmail: socket.email })
         })
 
-        socket.on("sendCallAnswer", (data) => {
-            socket.to(data.peer).emit("receiveAnswer", { id: data.id, relatedSocket: socket.id, answer: data.answer })
+        socket.on("sendAnswer", (data) => {
+            socket.to(data.peer).emit("receiveAnswer", { id: data.id, peer: socket.id, answer: data.answer })
+        })
+
+        socket.on("sendLastOffer", (data) => {
+            socket.to(data.peer).emit("receiveLastOffer", { id: data.id, peer: socket.id, offer: data.offer })
         })
 
     })

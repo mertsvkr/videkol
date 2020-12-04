@@ -2,6 +2,7 @@ var currentRoom = ""
 var currentCallId = ""
 var comingCallId = ""
 var myPeerConnections = {}
+var videoCallStream = null
 var rooms = [] //only roomNames
 var roomInfo = {} /**every key is room name, their value is {title: "", messages: []} */
 //                     every element of the messages array is in such format: {from:"email", message: "content" fileId: id, filType, fileSize, fileName} */
@@ -16,71 +17,73 @@ function createSocketConnection() {
     socket = io.connect(URL_BASE)
     socket.emit("accountRoom", document.cookie)
 
+    socket.on("comingCall", (data) => {
+        if (currentCallId == "") {
+            comingCallId = data.id
+            document.getElementById("acceptCall").style.display = "block"
+            document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from
+        }
+    })
+
     socket.on("newCallJoinRequest", async (data) => {
         var peerConnection = null
-        if (!myPeerConnections[data.relatedSocket]) {
+        if (!myPeerConnections[data.peer]) {
             peerConnection = new RTCPeerConnection()
-            myPeerConnections[data.relatedSocket] = { peerConnection: peerConnection }
+            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
+            if (videoCallStream) {
+                console.log("stream var")
+            }
+            setTheVideoCallTracks(peerConnection)
             peerConnection.ontrack = function ({ streams: [stream] }) {
+                debugger;
                 const remoteVideo = document.getElementById("remote-video");
                 if (remoteVideo) {
                     remoteVideo.srcObject = stream;
                 }
             };
         } else {
-            peerConnection = myPeerConnections[data.relatedSocket].peerConnection
+            peerConnection = myPeerConnections[data.peer].peerConnection
         }
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-        myPeerConnections[data.relatedSocket].offer = offer
-        socket.emit("offerForNewCallJoinRequest", { id: data.id, peer: data.relatedSocket, offer: offer })
-
+        myPeerConnections[data.peer].offer = offer
+        socket.emit("sendOffer", { id: data.id, peer: data.peer, offer: offer })
     })
 
-    socket.on("joinRequestAccepted", async (data) => {
+    socket.on("receiveOffer", async (data) => {
         var peerConnection = null
-        if (!myPeerConnections[data.relatedSocket]) {
+        if (!myPeerConnections[data.peer]) {
             peerConnection = new RTCPeerConnection()
-            myPeerConnections[data.relatedSocket] = { peerConnection: peerConnection }
+            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
+            if (videoCallStream) {
+                console.log("stream var")
+            }
+            setTheVideoCallTracks(peerConnection)
             peerConnection.ontrack = function ({ streams: [stream] }) {
+                debugger;
                 const remoteVideo = document.getElementById("remote-video");
                 if (remoteVideo) {
                     remoteVideo.srcObject = stream;
                 }
             };
         } else {
-            peerConnection = myPeerConnections[data.relatedSocket].peerConnection
+            peerConnection = myPeerConnections[data.peer].peerConnection
         }
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
         const answer = await peerConnection.createAnswer()
         await peerConnection.setLocalDescription(new RTCSessionDescription(answer))
-        myPeerConnections[data.relatedSocket].answer = answer
-        socket.emit("sendCallAnswer", { answer: answer, id: data.id, peer: data.relatedSocket })
-
+        myPeerConnections[data.peer].answer = answer
+        socket.emit("sendAnswer", { answer: answer, id: data.id, peer: data.peer })
     })
 
     socket.on("receiveAnswer", async (data) => {
-        await myPeerConnections[data.relatedSocket].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
-        if (!myPeerConnections[data.relatedSocket].answer) {
-            socket.emit("acceptCall", { id: data.id })
-        } else {
+        await myPeerConnections[data.peer].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
+        var offer = await myPeerConnections[data.peer].peerConnection.createOffer()
+        socket.emit("sendLastOffer", { id: data.id, peer: data.peer, offer: offer })
+    })
 
-            navigator.getUserMedia(
-                { video: true, audio: true },
-                stream => {
-                    const localVideo = document.getElementById("local-video");
-                    if (localVideo) {
-                        localVideo.srcObject = stream;
-                    }
-
-                    stream.getTracks().forEach(track => myPeerConnections[data.relatedSocket].peerConnection.addTrack(track, stream));
-                },
-                error => {
-                    console.warn(error.message);
-                }
-            );
-
-        }
+    socket.on("receiveLastOffer", async (data) => {
+        await myPeerConnections[data.peer].peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
     })
 
     socket.on("newRoomCreated", data => {
@@ -141,14 +144,6 @@ function createSocketConnection() {
 
     socket.on("endUpload", (data) => {
         console.log(data.id + " upload completed")
-    })
-
-    socket.on("comingCall", (data) => {
-        if (currentCallId == "" && comingCallId == "") {
-            comingCallId = data.id
-            document.getElementById("acceptCall").style.display = "block"
-            document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from
-        }
     })
 
 }
@@ -249,7 +244,8 @@ function setCommunicationButtonActions() {
 
     if (acceptCallButton) {
         acceptCallButton.onclick = function () {
-            socket.emit("acceptCall", { id: comingCallId })
+            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId }) })
+            //            socket.emit("acceptCall", { id: comingCallId })
         }
     }
 
@@ -316,10 +312,34 @@ function setCommunicationButtonActions() {
         sendCallRequestButton.onclick = function () {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
-                socket.emit("newVideoCall", { id: currentCallId, room: currentRoom })
+                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom }) })
             }
         }
     }
+}
+
+function setVideoCallStream(socketOperation) {
+    navigator.getUserMedia(
+        { video: true, audio: true },
+        stream => {
+            const localVideo = document.getElementById("local-video");
+            if (localVideo) {
+                localVideo.srcObject = stream;
+            }
+            videoCallStream = stream
+            socketOperation()
+        },
+        error => {
+            console.warn(error.message);
+        }
+    );
+}
+
+
+
+function setTheVideoCallTracks(peerConnection) {
+    debugger;
+    videoCallStream.getTracks().forEach(track => peerConnection.addTrack(track, videoCallStream));
 }
 
 
