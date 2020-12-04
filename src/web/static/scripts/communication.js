@@ -1,13 +1,90 @@
 var currentRoom = ""
+var currentCallId = ""
+var comingCallId = ""
+var myPeerConnections = {}
+var videoCallStream = null
 var rooms = [] //only roomNames
 var roomInfo = {} /**every key is room name, their value is {title: "", messages: []} */
 //                     every element of the messages array is in such format: {from:"email", message: "content" fileId: id, filType, fileSize, fileName} */
 myFileReaders = {}
 downloadingFileBuffers = {}
 var socket = null
+const { RTCPeerConnection, RTCSessionDescription } = window; // to create rtc objects in video call operations
+
+
+
 function createSocketConnection() {
     socket = io.connect(URL_BASE)
     socket.emit("accountRoom", document.cookie)
+
+    socket.on("comingCall", (data) => {
+        if (currentCallId == "") {
+            comingCallId = data.id
+            document.getElementById("acceptCall").style.display = "block"
+            document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from
+        }
+    })
+
+    socket.on("newCallJoinRequest", async (data) => {
+        var peerConnection = null
+        if (!myPeerConnections[data.peer]) {
+            peerConnection = new RTCPeerConnection()
+            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
+            if (videoCallStream) {
+                console.log("stream var")
+            }
+            setTheVideoCallTracks(peerConnection)
+            peerConnection.ontrack = function ({ streams: [stream] }) {
+                debugger;
+                const remoteVideo = document.getElementById("remote-video");
+                if (remoteVideo) {
+                    remoteVideo.srcObject = stream;
+                }
+            };
+        } else {
+            peerConnection = myPeerConnections[data.peer].peerConnection
+        }
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+        myPeerConnections[data.peer].offer = offer
+        socket.emit("sendOffer", { id: data.id, peer: data.peer, offer: offer })
+    })
+
+    socket.on("receiveOffer", async (data) => {
+        var peerConnection = null
+        if (!myPeerConnections[data.peer]) {
+            peerConnection = new RTCPeerConnection()
+            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
+            if (videoCallStream) {
+                console.log("stream var")
+            }
+            setTheVideoCallTracks(peerConnection)
+            peerConnection.ontrack = function ({ streams: [stream] }) {
+                debugger;
+                const remoteVideo = document.getElementById("remote-video");
+                if (remoteVideo) {
+                    remoteVideo.srcObject = stream;
+                }
+            };
+        } else {
+            peerConnection = myPeerConnections[data.peer].peerConnection
+        }
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
+        const answer = await peerConnection.createAnswer()
+        await peerConnection.setLocalDescription(new RTCSessionDescription(answer))
+        myPeerConnections[data.peer].answer = answer
+        socket.emit("sendAnswer", { answer: answer, id: data.id, peer: data.peer })
+    })
+
+    socket.on("receiveAnswer", async (data) => {
+        await myPeerConnections[data.peer].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
+        var offer = await myPeerConnections[data.peer].peerConnection.createOffer()
+        socket.emit("sendLastOffer", { id: data.id, peer: data.peer, offer: offer })
+    })
+
+    socket.on("receiveLastOffer", async (data) => {
+        await myPeerConnections[data.peer].peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
+    })
 
     socket.on("newRoomCreated", data => {
         if (!rooms.includes(data.roomName)) {
@@ -68,6 +145,7 @@ function createSocketConnection() {
     socket.on("endUpload", (data) => {
         console.log(data.id + " upload completed")
     })
+
 }
 
 function refreshChatRoomList() {
@@ -160,8 +238,16 @@ function setCommunicationButtonActions() {
     var newRoomTitle = document.getElementById("newRoomTitle")
     var sendMessageButton = document.getElementById("sendMessageButton")
     var messageFileInput = document.getElementById("messageFileInput")
-
     var messageTextInput = document.getElementById("messageTextInput")
+    var sendCallRequestButton = document.getElementById("sendCallRequestButton")
+    var acceptCallButton = document.getElementById("acceptCall")
+
+    if (acceptCallButton) {
+        acceptCallButton.onclick = function () {
+            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId }) })
+            //            socket.emit("acceptCall", { id: comingCallId })
+        }
+    }
 
     if (createRoomButton) {
         createRoomButton.onclick = function () {
@@ -221,6 +307,39 @@ function setCommunicationButtonActions() {
             }
         }
     }
+
+    if (sendCallRequestButton) {
+        sendCallRequestButton.onclick = function () {
+            if (currentCallId == "") {
+                currentCallId = generateUUID()
+                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom }) })
+            }
+        }
+    }
+}
+
+function setVideoCallStream(socketOperation) {
+    navigator.getUserMedia(
+        { video: true, audio: true },
+        stream => {
+            const localVideo = document.getElementById("local-video");
+            if (localVideo) {
+                localVideo.srcObject = stream;
+            }
+            videoCallStream = stream
+            socketOperation()
+        },
+        error => {
+            console.warn(error.message);
+        }
+    );
+}
+
+
+
+function setTheVideoCallTracks(peerConnection) {
+    debugger;
+    videoCallStream.getTracks().forEach(track => peerConnection.addTrack(track, videoCallStream));
 }
 
 

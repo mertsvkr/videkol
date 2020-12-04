@@ -11,6 +11,10 @@ var struct = {
     slice: 0,
 };
 
+var currentCalls = {
+
+}
+
 async function setIO(server) {
     global.io = require("socket.io")(server)
     io.on('connection', (socket) => {
@@ -78,6 +82,35 @@ async function setIO(server) {
         socket.on("downloadRequest", async (data) => {
             socket.emit("downloadFile", { id: data.id, slice: files[data.id].data[data.currentSlice] })
         })
+
+
+        socket.on("newVideoCall", (data) => {
+            currentCalls[data.id] = { room: data.room, currentParticipantSocketIds: [] }
+            currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
+            socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email })
+        })
+
+        socket.on("acceptCall", (data) => {
+            currentCalls[data.id].currentParticipantSocketIds.forEach(element => {
+                if (element != socket.id) {
+                    socket.to(element).emit("newCallJoinRequest", { id: data.id, peer: socket.id, peerEmail: socket.email })
+                }
+            });
+            currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
+        })
+
+        socket.on("sendOffer", (data) => {
+            socket.to(data.peer).emit("receiveOffer", { id: data.id, offer: data.offer, peer: socket.id, peerEmail: socket.email })
+        })
+
+        socket.on("sendAnswer", (data) => {
+            socket.to(data.peer).emit("receiveAnswer", { id: data.id, peer: socket.id, answer: data.answer })
+        })
+
+        socket.on("sendLastOffer", (data) => {
+            socket.to(data.peer).emit("receiveLastOffer", { id: data.id, peer: socket.id, offer: data.offer })
+        })
+
     })
 }
 

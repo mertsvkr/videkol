@@ -24,12 +24,19 @@
         <button id="logoutButton">Log out</button>
     </div>
     <div id="pageContentsDiv">
+        <div id="videocall">
+            <video autoplay class="remote-video" id="remote-video"></video>
+            <video autoplay muted class="local-video" id="local-video"></video>
+            <p id="comingCallInfo"></p>
+            <button id="acceptCall" style="display: none;">accept call</button>
+        </div>
         <div id="messagingDivPlaceholder">
-            ODA SEC
+            Choose a chat room...
         </div>
         <div id="messagingDiv" style="display: none;">
             <div id="messagingHeaderDiv">
                 <p id="messagingRoomTitle"></p>
+                <button id="sendCallRequestButton">Call</button>
             </div>
             <div id="messagesDiv">
 
@@ -58,8 +65,8 @@
 <script src="/scripts/auth.js"></script>
 <script src="/scripts/communication.js"></script>
 <script>
-    createSocketConnection()
     window.onload = () => {
+        createSocketConnection()
         setAuthButtonActions()
         setCommunicationButtonActions()
     }
