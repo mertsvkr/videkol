@@ -9,6 +9,7 @@ var roomInfo = {} /**every key is room name, their value is {title: "", messages
 myFileReaders = {}
 downloadingFileBuffers = {}
 var socket = null
+var call_type; //0:video call - 1:screen-share
 const { RTCPeerConnection, RTCSessionDescription } = window; // to create rtc objects in video call operations
 
 
@@ -18,10 +19,20 @@ function createSocketConnection() {
     socket.emit("accountRoom", document.cookie)
 
     socket.on("comingCall", (data) => {
+        console.log(data.type)
+        console.log("coming call")
         if (currentCallId == "") {
             comingCallId = data.id
-            document.getElementById("acceptCall").style.display = "block"
-            document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from
+            if (data.type == 0) {
+                document.getElementById("acceptCall").style.display = "block"
+                document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from+" wants video call"
+
+            } else {
+                document.getElementById("acceptScreen").style.display = "block"
+                document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from + " wants to share screen"
+
+            }
+            
         }
     })
 
@@ -240,11 +251,21 @@ function setCommunicationButtonActions() {
     var messageFileInput = document.getElementById("messageFileInput")
     var messageTextInput = document.getElementById("messageTextInput")
     var sendCallRequestButton = document.getElementById("sendCallRequestButton")
+    var sendScreenShareRequestButton = document.getElementById("sendScreenShareRequestButton")
     var acceptCallButton = document.getElementById("acceptCall")
+    var acceptScreenButton = document.getElementById("acceptScreen")
 
     if (acceptCallButton) {
         acceptCallButton.onclick = function () {
-            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId }) })
+            call_type=0
+            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type:0 }) })
+            //            socket.emit("acceptCall", { id: comingCallId })
+        }
+    }
+    if (acceptScreenButton) {
+        acceptScreenButton.onclick = function () {
+            call_type = 1
+            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 1}) })
             //            socket.emit("acceptCall", { id: comingCallId })
         }
     }
@@ -312,31 +333,65 @@ function setCommunicationButtonActions() {
         sendCallRequestButton.onclick = function () {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
-                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom }) })
+                call_type=0
+                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom,type:0 }) })
+            }
+        }
+    }
+    if (sendScreenShareRequestButton) {
+        sendScreenShareRequestButton.onclick = function () {
+            if (currentCallId == "") {
+                currentCallId = generateUUID()
+                call_type = 1
+                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom, type: 1 }) })
             }
         }
     }
 }
 
 function setVideoCallStream(socketOperation) {
-    navigator.getUserMedia(
-        { video: true, audio: true },
-        stream => {
-            const localVideo = document.getElementById("local-video");
-            if (localVideo) {
-                localVideo.srcObject = stream;
+    if (call_type == 0) {
+        console.log("video call");
+        navigator.getUserMedia(
+            { video: true, 
+                //audio: true 
+                },
+            stream => {
+                const localVideo = document.getElementById("local-video");
+                if (localVideo) {
+                    localVideo.srcObject = stream;
+                }
+                videoCallStream = stream
+                console.log("video call");
+                socketOperation()
+                console.log("video call");
+
+            },
+            error => {
+                console.warn(error.message);
             }
-            videoCallStream = stream
-            socketOperation()
-        },
-        error => {
-            console.warn(error.message);
-        }
-    );
+        );
+    }
+    else {
+        console.log("screen call");
+        navigator.mediaDevices.getDisplayMedia({ video: true })
+            .then(handleSuccess, handleError)
+            .then(socketOperation);
+    }
 }
+function handleSuccess(stream) {
+    const localVideo = document.getElementById("local-video");
+    if (localVideo) {
+        localVideo.srcObject = stream;
+    }
+    videoCallStream = stream
+    console.log("screen call");
+     ///socketOperation()
 
-
-
+}
+function handleError(error) {
+    errorMsg(`getDisplayMedia error: ${error.name}`, error);
+}
 function setTheVideoCallTracks(peerConnection) {
     debugger;
     videoCallStream.getTracks().forEach(track => peerConnection.addTrack(track, videoCallStream));

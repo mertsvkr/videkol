@@ -87,13 +87,14 @@ async function setIO(server) {
         socket.on("newVideoCall", (data) => {
             currentCalls[data.id] = { room: data.room, currentParticipantSocketIds: [] }
             currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
-            socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email })
+            console.log("new video call")
+            socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email, type:data.type })
         })
 
         socket.on("acceptCall", (data) => {
             currentCalls[data.id].currentParticipantSocketIds.forEach(element => {
                 if (element != socket.id) {
-                    socket.to(element).emit("newCallJoinRequest", { id: data.id, peer: socket.id, peerEmail: socket.email })
+                    socket.to(element).emit("newCallJoinRequest", { id: data.id, peer: socket.id, peerEmail: socket.email, type:data.type })
                 }
             });
             currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
