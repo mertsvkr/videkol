@@ -59,7 +59,7 @@ async function setIO(server) {
         // request the slices of the uploading file. 
         // if upload is done, emit the file info as message to the others in the room it.
         socket.on("requestSliceUpload", async (data) => {
-            files[data.id]?.data.push(data.data);
+            files[data.id].data.push(data.data);
             files[data.id].slice++;
 
             if (files[data.id].slice * 100000 >= files[data.id].size) {
@@ -87,14 +87,15 @@ async function setIO(server) {
         socket.on("newVideoCall", (data) => {
             currentCalls[data.id] = { room: data.room, currentParticipantSocketIds: [] }
             currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
+
             console.log("new video call")
-            socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email, type:data.type })
+            socket.to(data.room).emit("comingCall", { room: data.room, id: data.id, from: socket.email, type: data.type })
         })
 
         socket.on("acceptCall", (data) => {
             currentCalls[data.id].currentParticipantSocketIds.forEach(element => {
                 if (element != socket.id) {
-                    socket.to(element).emit("newCallJoinRequest", { id: data.id, peer: socket.id, peerEmail: socket.email, type:data.type })
+                    socket.to(element).emit("newCallJoinRequest", { id: data.id, peer: socket.id, peerEmail: socket.email, type: data.type })
                 }
             });
             currentCalls[data.id].currentParticipantSocketIds.push(socket.id)
@@ -110,6 +111,10 @@ async function setIO(server) {
 
         socket.on("sendLastOffer", (data) => {
             socket.to(data.peer).emit("receiveLastOffer", { id: data.id, peer: socket.id, offer: data.offer })
+        })
+
+        socket.on("sendCandidate", (data) => {
+            socket.to(data.peer).emit("receiveCandidate", { candidate: data.candidate, peer: socket.id, id: data.id, peerEmail: socket.email })
         })
 
     })

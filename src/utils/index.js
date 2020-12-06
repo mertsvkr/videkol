@@ -18,11 +18,15 @@ function generateUUID() { // Public Domain/MIT
 function getSocketListOfARoom(roomName) {
     var socketList = []
     //get every socket id belonging to the room.
-    var socketIDs = io.sockets?.adapter?.rooms?.get(roomName)
-    //get the sockets from their ids
-    socketIDs?.forEach((ID) => {
-        socketList.push(io.sockets.sockets.get(ID))
-    })
+    if (io.sockets && io.sockets.adapter && io.sockets.adapter.rooms) {
+        var socketIDs = io.sockets.adapter.rooms.get(roomName)
+        //get the sockets from their ids
+        if (socketIDs) {
+            socketIDs.forEach((ID) => {
+                socketList.push(io.sockets.sockets.get(ID))
+            })
+        }
+    }
     return socketList
 }
 
