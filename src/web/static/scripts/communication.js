@@ -2,6 +2,8 @@ var currentRoom = ""
 var currentCallId = ""
 var comingCallId = ""
 var myPeerConnections = {}
+var otherCandidate = null
+var myCandidate = null
 var videoCallStream = null
 var rooms = [] //only roomNames
 var roomInfo = {} /**every key is room name, their value is {title: "", messages: []} */
@@ -11,7 +13,13 @@ downloadingFileBuffers = {}
 var socket = null
 var call_type; //0:video call - 1:screen-share
 const { RTCPeerConnection, RTCSessionDescription } = window; // to create rtc objects in video call operations
-
+const PC_CONFIG = {
+    'iceServers': [
+        {
+            'urls': 'stun:stun.l.google.com:19302'
+        }
+    ]
+}
 
 
 function createSocketConnection() {
@@ -25,61 +33,85 @@ function createSocketConnection() {
             comingCallId = data.id
             if (data.type == 0) {
                 document.getElementById("acceptCall").style.display = "block"
-                document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from+" wants video call"
 
-            } else {
+                document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from
+            } else if (data.type == 1) {
                 document.getElementById("acceptScreen").style.display = "block"
                 document.getElementById("comingCallInfo").innerText = "Room: " + roomInfo[data.room].title + ",By: " + data.from + " wants to share screen"
 
             }
-            
         }
+    })
+
+    socket.on("receiveCandidate", async (data) => {
+        console.log("receive candidate")
+        var peerConnection = null
+        if (!myPeerConnections[data.peer]) {
+            peerConnection = new RTCPeerConnection(PC_CONFIG)
+            peerConnection.onicecandidate = (event) => {
+                debugger
+                if (event.candidate) {
+                    console.log('ICE candidate received');
+                    myPeerConnections[data.peer].myCandidate = event.candidate
+                    socket.emit("sendCandidate", { candidate: event.candidate, peer: data.peer, id: data.id })
+                }
+            }
+            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
+            if (videoCallStream) {
+                console.log("stream var")
+            }
+            setTheVideoCallTracks(peerConnection)
+            peerConnection.ontrack = function ({ streams: [stream] }) {
+                debugger;
+                const remoteVideo = document.getElementById("remote-video");
+                if (remoteVideo) {
+                    remoteVideo.srcObject = stream;
+                }
+            };
+            peerConnection.addIceCandidate(data.candidate)
+        } else {
+            peerConnection = myPeerConnections[data.peer].peerConnection
+            peerConnection.addIceCandidate(data.candidate)
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+            myPeerConnections[data.peer].offer = offer
+            socket.emit("sendOffer", { id: data.id, peer: data.peer, offer: offer })
+        }
+
     })
 
     socket.on("newCallJoinRequest", async (data) => {
+        console.log("newcall join request")
         var peerConnection = null
         if (!myPeerConnections[data.peer]) {
-            peerConnection = new RTCPeerConnection()
-            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
-            if (videoCallStream) {
-                console.log("stream var")
+            peerConnection = new RTCPeerConnection(PC_CONFIG)
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    console.log('ICE candidate received');
+                    myPeerConnections[data.peer].myCandidate = event.candidate
+                    socket.emit("sendCandidate", { candidate: event.candidate, peer: data.peer, id: data.id })
+                }
             }
+
+            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
             setTheVideoCallTracks(peerConnection)
             peerConnection.ontrack = function ({ streams: [stream] }) {
-                debugger;
                 const remoteVideo = document.getElementById("remote-video");
                 if (remoteVideo) {
                     remoteVideo.srcObject = stream;
                 }
             };
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+            myPeerConnections[data.peer].offer = offer
+
         } else {
             peerConnection = myPeerConnections[data.peer].peerConnection
         }
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-        myPeerConnections[data.peer].offer = offer
-        socket.emit("sendOffer", { id: data.id, peer: data.peer, offer: offer })
     })
 
     socket.on("receiveOffer", async (data) => {
-        var peerConnection = null
-        if (!myPeerConnections[data.peer]) {
-            peerConnection = new RTCPeerConnection()
-            myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
-            if (videoCallStream) {
-                console.log("stream var")
-            }
-            setTheVideoCallTracks(peerConnection)
-            peerConnection.ontrack = function ({ streams: [stream] }) {
-                debugger;
-                const remoteVideo = document.getElementById("remote-video");
-                if (remoteVideo) {
-                    remoteVideo.srcObject = stream;
-                }
-            };
-        } else {
-            peerConnection = myPeerConnections[data.peer].peerConnection
-        }
+        var peerConnection = myPeerConnections[data.peer].peerConnection
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer))
         const answer = await peerConnection.createAnswer()
         await peerConnection.setLocalDescription(new RTCSessionDescription(answer))
@@ -257,18 +289,14 @@ function setCommunicationButtonActions() {
     var acceptCallButton = document.getElementById("acceptCall")
     var acceptScreenButton = document.getElementById("acceptScreen")
     var endCallButton = document.getElementById("endCallButton")
+    var sendScreenShareRequestButton = document.getElementById("sendScreenShareRequestButton")
+
+
 
     if (acceptCallButton) {
         acceptCallButton.onclick = function () {
-            call_type=0
-            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type:0 }) })
-            //            socket.emit("acceptCall", { id: comingCallId })
-        }
-    }
-    if (acceptScreenButton) {
-        acceptScreenButton.onclick = function () {
-            call_type = 1
-            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 1}) })
+            call_type = 0
+            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 0 }) })
             //            socket.emit("acceptCall", { id: comingCallId })
         }
     }
@@ -282,9 +310,19 @@ function setCommunicationButtonActions() {
             videoCallStream.getTracks().forEach((track) => {
                 track.stop();
             });
-           // socket.emit("endCall", { id: currentCallId })
+            // socket.emit("endCall", { id: currentCallId })
         }
     }
+
+    if (acceptScreenButton) {
+        acceptScreenButton.onclick = function () {
+            call_type = 1
+            setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 1 }) })
+
+        }
+    }
+
+
 
     if (createRoomButton) {
         createRoomButton.onclick = function () {
@@ -359,7 +397,7 @@ function setCommunicationButtonActions() {
                 document.getElementById("videocall").style.width = "30%"
 
                 document.getElementById("endCallButton").style.display = "block"
-                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom,type:0 }) })
+                setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom, type: 0 }) })
             }
         }
     }
@@ -379,36 +417,51 @@ function setCommunicationButtonActions() {
 
 function setVideoCallStream(socketOperation) {
     if (call_type == 0) {
-        console.log("video call");
-        navigator.getUserMedia(
-            { video: true, 
-                //audio: true 
+        console.log("video call")
+        var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia
+
+        //    navigator.getUserMedia(
+        if (!getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then(stream => {
+                    const localVideo = document.getElementById("local-video");
+                    if (localVideo) {
+                        localVideo.srcObject = stream;
+                    }
+                    videoCallStream = stream
+                    socketOperation()
+                }).error(
+                    error => {
+                        console.warn(error.message);
+                    }
+                );
+
+        } else {
+            getUserMedia.call(navigator,
+                { video: true, audio: true },
+                stream => {
+                    const localVideo = document.getElementById("local-video");
+                    if (localVideo) {
+                        localVideo.srcObject = stream;
+                    }
+                    videoCallStream = stream
+                    socketOperation()
                 },
-            stream => {
-                const localVideo = document.getElementById("local-video");
-                if (localVideo) {
-                    localVideo.srcObject = stream;
+                error => {
+                    console.warn(error.message);
                 }
-                videoCallStream = stream
-                console.log("video call");
-                socketOperation()
-                console.log("video call");
-
-            },
-            error => {
-                console.warn(error.message);
-            }
-        );
-
+            );
+        }
     }
-    else {
-        console.log("screen call");
+    else if (call_type == 1) {
+        console.log("screen call")
         navigator.mediaDevices.getDisplayMedia({ video: true })
             .then(handleSuccess, handleError)
-            .then(socketOperation);
+            .then(socketOperation)
     }
 }
- 
+
+
 
 function handleSuccess(stream) {
     const localVideo = document.getElementById("local-video");
@@ -417,14 +470,13 @@ function handleSuccess(stream) {
     }
     videoCallStream = stream
     console.log("screen call");
-     ///socketOperation()
+    ///socketOperation()
 
 }
 function handleError(error) {
     errorMsg(`getDisplayMedia error: ${error.name}`, error);
 }
 function setTheVideoCallTracks(peerConnection) {
-    debugger;
     videoCallStream.getTracks().forEach(track => peerConnection.addTrack(track, videoCallStream));
 }
 

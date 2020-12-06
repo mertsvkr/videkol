@@ -18,9 +18,11 @@ async function createRoomPost(req, res) {
             //get every socket belonging to the account of the other people.
             var sockets = getSocketListOfARoom(req.body.others[userEmail])
             //join the sockets of the account
-            sockets?.forEach((socketItem) => {
-                socketItem.join(roomName)
-            })
+            if (sockets) {
+                sockets.forEach((socketItem) => {
+                    socketItem.join(roomName)
+                })
+            }
         }
 
         io.to(roomName).emit("newRoomCreated", { roomName: roomName, roomTitle: req.body.roomTitle })

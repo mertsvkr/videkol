@@ -6,7 +6,7 @@ const communicationRouter = require("./api/routers/communication")
 
 const cookieParser = require("cookie-parser")
 const jwt = require("jsonwebtoken")
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000
 
 const app = express()
 

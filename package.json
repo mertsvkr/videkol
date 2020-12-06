@@ -7,14 +7,13 @@
     "mongodb": "^3.6.3",
     "mongoose": "^5.10.15",
     "socket.io": "^3.0.3",
-    "validator": "^13.1.17"
+    "validator": "^13.1.17",
+    "env-cmd": "^10.1.0",
+    "nodemon": "^2.0.6"
   },
   "main": "index.js",
   "scripts": {
     "start": "env-cmd -f ./.env nodemon src/app.js"
   },
-  "devDependencies": {
-    "env-cmd": "^10.1.0",
-    "nodemon": "^2.0.6"
-  }
+  "devDependencies": {}
 }

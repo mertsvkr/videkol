@@ -47,7 +47,7 @@ async function loginPost(req, res) {
 }
 
 async function logoutPost(req, res) {
-    if (req.cookies?.token) {
+    if (req.cookies && req.cookies.token) {
         try {
             const user = await User.findById(jwt.verify(req.cookies.token, process.env.JWT_KEY)._id)
             if (user) {
