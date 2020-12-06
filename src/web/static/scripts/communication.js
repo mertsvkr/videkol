@@ -254,6 +254,7 @@ function setCommunicationButtonActions() {
     var sendScreenShareRequestButton = document.getElementById("sendScreenShareRequestButton")
     var acceptCallButton = document.getElementById("acceptCall")
     var acceptScreenButton = document.getElementById("acceptScreen")
+    var endCallButton = document.getElementById("endCallButton")
 
     if (acceptCallButton) {
         acceptCallButton.onclick = function () {
@@ -267,6 +268,17 @@ function setCommunicationButtonActions() {
             call_type = 1
             setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 1}) })
             //            socket.emit("acceptCall", { id: comingCallId })
+        }
+    }
+    if (endCallButton) {
+        endCallButton.onclick = function () {
+            const localVideo = document.getElementById("local-video");
+            document.getElementById("local-video").style.display = "none"
+            document.getElementById("endCallButton").style.display = "none"
+            videoCallStream.getTracks().forEach((track) => {
+                track.stop();
+            });
+           // socket.emit("endCall", { id: currentCallId })
         }
     }
 
@@ -333,7 +345,8 @@ function setCommunicationButtonActions() {
         sendCallRequestButton.onclick = function () {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
-                call_type=0
+                call_type = 0
+                document.getElementById("endCallButton").style.display = "block"
                 setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom,type:0 }) })
             }
         }
@@ -371,6 +384,7 @@ function setVideoCallStream(socketOperation) {
                 console.warn(error.message);
             }
         );
+
     }
     else {
         console.log("screen call");
@@ -379,6 +393,8 @@ function setVideoCallStream(socketOperation) {
             .then(socketOperation);
     }
 }
+ 
+
 function handleSuccess(stream) {
     const localVideo = document.getElementById("local-video");
     if (localVideo) {
