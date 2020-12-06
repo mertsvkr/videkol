@@ -62,10 +62,15 @@ function createSocketConnection() {
             }
             setTheVideoCallTracks(peerConnection)
             peerConnection.ontrack = function ({ streams: [stream] }) {
-                debugger;
-                const remoteVideo = document.getElementById("remote-video");
-                if (remoteVideo) {
-                    remoteVideo.srcObject = stream;
+                if (!document.getElementById(data.peerEmail + "-remote")) {
+                    const remoteVideoTemplate = document.querySelector("#remoteVideoTemplate");
+                    const remoteVideoNode = remoteVideoTemplate.content.cloneNode(true)
+                    var videocallDiv = document.getElementById("videocall")
+                    videocallDiv.appendChild(remoteVideoNode)
+                    videocallDiv.lastElementChild.id = data.peerEmail + "-remote"
+                    videocallDiv.lastElementChild.srcObject = stream
+                } else {
+                    document.getElementById(data.peerEmail + "-remote").srcObject = stream
                 }
             };
             peerConnection.addIceCandidate(data.candidate)
@@ -96,10 +101,38 @@ function createSocketConnection() {
             myPeerConnections[data.peer] = { peerConnection: peerConnection, peerEmail: data.peerEmail }
             setTheVideoCallTracks(peerConnection)
             peerConnection.ontrack = function ({ streams: [stream] }) {
-                const remoteVideo = document.getElementById("remote-video");
-                if (remoteVideo) {
-                    remoteVideo.srcObject = stream;
+                if (!document.getElementById(data.peerEmail + "-remote")) {
+                    const remoteVideoTemplate = document.querySelector("#remoteVideoTemplate");
+                    const remoteVideoNode = remoteVideoTemplate.content.cloneNode(true)
+                    var videocallDiv = document.getElementById("videocall")
+                    videocallDiv.appendChild(remoteVideoNode)
+                    videocallDiv.lastElementChild.id = data.peerEmail + "-remote"
+                    videocallDiv.lastElementChild.srcObject = stream
+                } else {
+                    document.getElementById(data.peerEmail + "-remote").srcObject = stream
                 }
+                /**
+                 * var roomTemplate = document.querySelector('#roomTemplate');
+    var cloneRoom = null
+    // Clone the new row and insert it into the table
+    var roomsDiv = document.getElementById("roomsDiv")
+    roomsDiv.innerHTML = ""
+    var i = rooms.length - 1;
+    while (i >= 0) {
+        cloneRoom = roomTemplate.content.cloneNode(true);
+        console.log(cloneRoom)
+        cloneRoom.firstElementChild.name = rooms[i]
+        cloneRoom.firstElementChild.firstElementChild.name = rooms[i]
+
+        cloneRoom.getElementById("roomTitle").innerHTML = roomInfo[rooms[i]].title
+        cloneRoom.firstElementChild.onclick = selectRoomToChat
+        roomsDiv.appendChild(cloneRoom)
+        i--
+    }
+                 */
+                //                if (remoteVideo) {
+                //                  remoteVideo.srcObject = stream;
+                //            }
             };
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
@@ -411,6 +444,7 @@ function setVideoCallStream(socketOperation) {
                 .then(stream => {
                     const localVideo = document.getElementById("local-video");
                     if (localVideo) {
+                        localVideo.style.display = "block"
                         localVideo.srcObject = stream;
                     }
                     videoCallStream = stream
@@ -427,6 +461,7 @@ function setVideoCallStream(socketOperation) {
                 stream => {
                     const localVideo = document.getElementById("local-video");
                     if (localVideo) {
+                        localVideo.style.display = "block"
                         localVideo.srcObject = stream;
                     }
                     videoCallStream = stream
@@ -450,6 +485,7 @@ function setVideoCallStream(socketOperation) {
 
 function handleSuccess(stream) {
     const localVideo = document.getElementById("local-video");
+    localVideo.style.display = "block"
     if (localVideo) {
         localVideo.srcObject = stream;
     }

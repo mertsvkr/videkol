@@ -12,6 +12,10 @@
     </div>
 </template>
 
+<template id="remoteVideoTemplate">
+    <video autoplay class="remote-video"></video>
+</template>
+
 <head>
     <script src="./scripts/constants.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -25,7 +29,6 @@
     </div>
     <div id="pageContentsDiv">
         <div id="videocall">
-            <video autoplay class="remote-video" id="remote-video"></video>
             <video autoplay muted class="local-video" id="local-video"></video>
             <button id="endCallButton" style="display: none;">End Call</button>
             <p id="comingCallInfo"></p>

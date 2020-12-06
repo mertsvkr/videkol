@@ -101,3 +101,11 @@ body{
     outline: none;
 
 }
+
+.local-video{
+    display:none;
+    position: fixed;
+    right: 30;
+    bottom: 30;
+    width: 300px;
+}
