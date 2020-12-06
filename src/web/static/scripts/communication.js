@@ -212,6 +212,7 @@ function setMessages() {
 function createMessageNodeAndAdd(messageObject) {
     var messageTemplate = document.querySelector('#messageTemplate');
     var cloneMessage = messageTemplate.content.cloneNode(true)
+
     cloneMessage.firstElementChild.firstElementChild.innerText = messageObject.from
     cloneMessage.firstElementChild.lastElementChild.innerText = messageObject.message
     if (messageObject.fileId) { //if this is a file 
@@ -249,6 +250,7 @@ function setCommunicationButtonActions() {
     var newRoomTitle = document.getElementById("newRoomTitle")
     var sendMessageButton = document.getElementById("sendMessageButton")
     var messageFileInput = document.getElementById("messageFileInput")
+    var sendfilebutton = document.getElementById("sendfilebutton")
     var messageTextInput = document.getElementById("messageTextInput")
     var sendCallRequestButton = document.getElementById("sendCallRequestButton")
     var sendScreenShareRequestButton = document.getElementById("sendScreenShareRequestButton")
@@ -274,6 +276,8 @@ function setCommunicationButtonActions() {
         endCallButton.onclick = function () {
             const localVideo = document.getElementById("local-video");
             document.getElementById("local-video").style.display = "none"
+            document.getElementById("videocall").style.width = "0%"
+
             document.getElementById("endCallButton").style.display = "none"
             videoCallStream.getTracks().forEach((track) => {
                 track.stop();
@@ -303,8 +307,14 @@ function setCommunicationButtonActions() {
         }
     }
 
+    if (sendfilebutton) {
+        sendfilebutton.onclick = function () {
+            messageFileInput.addEventListener;
+        }
+    }
     if (sendMessageButton) {
         sendMessageButton.onclick = function () {
+            console.log("sednd file clicked")
             if (messageFileInput.files.length == 0) {
                 socket.emit("newMessage", { room: currentRoom, message: messageTextInput.value })
             } else {
@@ -346,6 +356,8 @@ function setCommunicationButtonActions() {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
                 call_type = 0
+                document.getElementById("videocall").style.width = "30%"
+
                 document.getElementById("endCallButton").style.display = "block"
                 setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom,type:0 }) })
             }
@@ -356,6 +368,9 @@ function setCommunicationButtonActions() {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
                 call_type = 1
+                document.getElementById("videocall").style.width = "30%"
+                document.getElementById("endCallButton").style.display = "block"
+
                 setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom, type: 1 }) })
             }
         }

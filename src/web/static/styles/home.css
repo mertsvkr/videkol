@@ -1,20 +1,36 @@
-body{
-    padding: 0;
-    margin: 0;
+body {
+    padding: 0px;
+    margin: 0px;
     height: 100%;
     display: flex;
     flex-direction: column;
+    background-image: url("back.jpg");
+    
 }
 
-#headerDiv{
+#headerDiv {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background: #cedebd;
+    
+    background: rgba(51, 170, 51, .4);
+    align-items: center;
+    font-size: 18px;
+    padding: 0px 5px;
+    height: 90px
+}
+
+
+#messagingHeaderDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    
+    background: rgba(51, 170, 51, .4);
     align-items: center;
     font-size: 20px;
     padding: 0px 10px;
-}
+} 
 
 #logoutButton{
     height: 40px;
@@ -43,12 +59,13 @@ body{
     flex-direction: column;
 }
 
-#roomsDiv{
+#roomsDiv {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow-y: scroll;
-    background: #f3f3f3;
+    
+    background: rgba(204, 204, 1, .4);
 }
 
 #createRoomDiv{
@@ -56,12 +73,20 @@ body{
     flex-direction: column;
 }
 
-#messagingDiv{
+#messagingDiv {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
     width: 100%;
+    margin: 10px;
+}
+#videocall {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    width: 0%;
 }
 
 #messagingDivPlaceholder{
@@ -94,10 +119,45 @@ body{
     background-color: bisque;
 }
 
-#messageTextInput{
+#messageTextInput {
     height: 40px;
     border-radius: 4px;
     border: 1px solid #86c4ba;
     outline: none;
+    padding: 8px;
+}
 
+.btn {
+    background-color:chocolate;
+    border: 1px;
+    color: white;
+    padding: 12px 16px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.bubble {
+    position: relative;
+    font-family: sans-serif;
+    font-size: 18px;
+    line-height: 10px;
+    '''width: 300px;'''
+    background: #fff;
+    border-radius: 40px;
+    padding: 8px;
+    text-align: left;
+    color: #000;
+    background-color: rgba(51, 170, 51, .4)
+}
+
+.bubble-bottom-left:before {
+    width: 0px;
+    height: 0px;
+    position: absolute;
+    border-left: 24px solid #fff;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #fff;
+    border-bottom: 20px solid transparent;
+    left: 32px;
+    bottom: -24px;
 }
