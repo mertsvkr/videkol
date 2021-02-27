@@ -19,24 +19,27 @@
 <head>
     <script src="./scripts/constants.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-	<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
 
     <link rel="stylesheet" href="./styles/home.css">
 </head>
 
 <body>
     <div id="headerDiv">
-		<img id="logo" src="./styles/mbchat.png" alt="chat">
+        <img id="logo" src="./styles/mbchat.png" alt="chat">
         <p>Welcome <%=email%></p>
         <button id="logoutButton">Log out</button>
     </div>
     <div id="pageContentsDiv">
         <div id="videocall">
             <video autoplay muted class="local-video" id="local-video"></video>
-			<button class="btn" id="endCallButton" style="display: none;"><i class="fas fa-video-slash"></i>End Call</button>
-            <p id="comingCallInfo"></p>
-            <button id="acceptCall" style="display: none;">accept call</button>
-            <button id="acceptScreen" style="display: none;">accept screen share</button>
+            <div id="callOperations">
+                <button id="endCallButton" style="display: none;"><i class="fas fa-video-slash"></i>End
+                    Call</button>
+                <p id="comingCallInfo"></p>
+                <button id="acceptCall" style="display: none;">accept call</button>
+                <button id="acceptScreen" style="display: none;">accept screen share</button>
+            </div>
         </div>
         <div id="messagingDivPlaceholder">
             Choose a chat room...
@@ -44,10 +47,11 @@
         <div id="messagingDiv" style="display: none;">
             <div id="messagingHeaderDiv">
                 <p id="messagingRoomTitle"></p>
-				<div id="buttons">
-					<button class="btn" id="sendCallRequestButton"><i class="fas fa-video">Video Call</i></button>
-					<button class="btn" id="sendScreenShareRequestButton"><i class="fas fa-desktop">Share Screen</i></button>
-				</div>
+                <div id="buttons">
+                    <button class="btn" id="sendCallRequestButton"><i class="fas fa-video">Video Call</i></button>
+                    <button class="btn" id="sendScreenShareRequestButton"><i class="fas fa-desktop">Share
+                            Screen</i></button>
+                </div>
             </div>
             <div id="messagesDiv">
 
@@ -55,11 +59,11 @@
             <div id="sendMessageDiv">
                 <input type="text" placeholder="Your message text..." id="messageTextInput">
                 <button class="btn" id="sendMessageButton"><i class="far fa-comment-alt"></i>Send</button>
-				
-				
-                <input class="btn" type="file" id="messageFileInput"> 
-                
-                
+
+
+                <input class="btn" type="file" id="messageFileInput">
+
+
             </div>
         </div>
         <div id="roomRelatedDiv">

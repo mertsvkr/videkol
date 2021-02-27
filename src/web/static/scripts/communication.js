@@ -27,6 +27,7 @@ function createSocketConnection() {
     socket.emit("accountRoom", document.cookie)
 
     socket.on("comingCall", (data) => {
+        document.getElementById("videocall").style.display = "flex"
         console.log(data.type)
         console.log("coming call")
         if (currentCallId == "") {
@@ -303,9 +304,18 @@ function setCommunicationButtonActions() {
     var sendScreenShareRequestButton = document.getElementById("sendScreenShareRequestButton")
 
 
-
+    if (messageTextInput) {
+        $("#messageTextInput").on('keyup', function (e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                sendMessageButton.click()
+            }
+        });
+    }
     if (acceptCallButton) {
         acceptCallButton.onclick = function () {
+            document.getElementById("acceptCall").style.display = "none"
+            document.getElementById("endCallButton").style.display = "block"
+
             call_type = 0
             setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 0 }) })
             //            socket.emit("acceptCall", { id: comingCallId })
@@ -313,20 +323,19 @@ function setCommunicationButtonActions() {
     }
     if (endCallButton) {
         endCallButton.onclick = function () {
-            const localVideo = document.getElementById("local-video");
-            document.getElementById("local-video").style.display = "none"
-            document.getElementById("videocall").style.width = "0%"
-
-            document.getElementById("endCallButton").style.display = "none"
             videoCallStream.getTracks().forEach((track) => {
                 track.stop();
             });
-            // socket.emit("endCall", { id: currentCallId })
+            myPeerConnections = {}
+            document.getElementById("videocall").style.display = "none"
         }
     }
 
     if (acceptScreenButton) {
         acceptScreenButton.onclick = function () {
+            document.getElementById("acceptScreen").style.display = "none"
+            document.getElementById("endCallButton").style.display = "block"
+
             call_type = 1
             setVideoCallStream(() => { socket.emit("acceptCall", { id: comingCallId, type: 1 }) })
 
@@ -366,6 +375,7 @@ function setCommunicationButtonActions() {
             console.log("sednd file clicked")
             if (messageFileInput.files.length == 0) {
                 socket.emit("newMessage", { room: currentRoom, message: messageTextInput.value })
+                document.getElementById("messageTextInput").value = ""
             } else {
                 var file = messageFileInput.files[0] // get the file
                 var fileReader = new FileReader() //create new fileReader for every File
@@ -405,7 +415,7 @@ function setCommunicationButtonActions() {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
                 call_type = 0
-                document.getElementById("videocall").style.width = "30%"
+                document.getElementById("videocall").style.display = "flex"
 
                 document.getElementById("endCallButton").style.display = "block"
                 setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom, type: 0 }) })
@@ -417,7 +427,7 @@ function setCommunicationButtonActions() {
             if (currentCallId == "") {
                 currentCallId = generateUUID()
                 call_type = 1
-                document.getElementById("videocall").style.width = "30%"
+                document.getElementById("videocall").style.display = "flex"
                 document.getElementById("endCallButton").style.display = "block"
 
                 setVideoCallStream(() => { socket.emit("newVideoCall", { id: currentCallId, room: currentRoom, type: 1 }) })

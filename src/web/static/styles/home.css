@@ -82,11 +82,14 @@ body {
     margin: 10px;
 }
 #videocall {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    display: none;
+    flex-direction: row;
+    /*justify-content: space-between;*/
     height: 100%;
-    width: 0%;
+    width: 100%;
+    position: fixed;
+    z-index: 999;
+    background-color: grey;
 }
 
 #messagingDivPlaceholder{
@@ -177,3 +180,13 @@ body {
     width: 500px;
 }
 
+#callOperations{
+    position: fixed;
+    align-self: flex-start;
+    z-index: 9999;
+}
+
+#endCallButton{
+    position: fixed;
+    z-index: 9999;
+}
