@@ -18,5 +18,5 @@ This is a web application that enables users to create chat rooms, make video ca
 # Installation
 1. Clone the repository
 2. Install dependancies by ```yarn``` or ```npm install```
-3. To run the project in your local system or in Heroku, you should modify the MongoDB connection URL from ".env" file.
+3. To run the project you should modify the MongoDB connection URL from ".env" file.
 4. Run the application by ```yarn start```
