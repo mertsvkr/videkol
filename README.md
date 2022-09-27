@@ -1,17 +1,6 @@
 # videkol
 This is a web application that enables users to create chat rooms, make video calls, group chatting, screen sharing and file sharing.
 
-# Screenshots
-
-### Text message and file sharing
-![](https://i.ibb.co/2S46VSd/text-And-File.png)
-
-### Coming call
-![](https://i.ibb.co/t3RPP4v/screenshare-Coming-Call.png)
-
-### Screen sharing
-![](https://i.ibb.co/SvtBRL2/screen-Sharing.png)
-
 # Tech/framework used
 * WebRTC: Used for peer to peer video/audio communication.
 * WebSocket: To create a socket connection between the server and client. Socket.IO library is used for WebSocket.
